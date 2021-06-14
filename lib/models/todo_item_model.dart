@@ -4,6 +4,7 @@ class TodoItem {
   bool _isActive = true;
   bool swipeRightDetected = false;
   String reminderDate;
+  int orderIndex;
 
   TodoItem(this._task, this.id, {this.reminderDate});
 
@@ -12,8 +13,8 @@ class TodoItem {
   setTask(task) => this._task = task;
 
   isActive() => _isActive;
+
   markDone() => _isActive = false;
+
   markActive() => _isActive = true;
-
-
 }

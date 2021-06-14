@@ -9,4 +9,12 @@ class Const {
 
   static String DATE_FORMAT = 'EEE MMMM dd hh:mm a';
 
+  // FIREBASE DOCUMENT FIELDS
+  static String DB_DOCUMENT_TASKS = 'tasks';
+  static String FIELD_TASK = 'task';
+  static String FIELD_ISACTIVE = 'isactive';
+  static String FIELD_REMINDER = 'reminder';
+  static String FIELD_ID = 'id';
+  static String FIELD_ORDERINDEX = 'orderindex';
+
 }

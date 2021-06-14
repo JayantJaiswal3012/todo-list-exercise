@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:todo_list/models/todo_item_model.dart';
+import 'package:todo_list/util/data_helper.dart';
 import 'package:todo_list/util/notification_helper.dart';
 import 'package:todo_list/widgets/create_item.dart';
 import 'package:intl/intl.dart';
@@ -25,13 +26,19 @@ class _TodoListState extends State<TodoList> {
   FocusNode focusNode;
   String selectedDateTime = "";
   TextEditingController controller;
-  final collection = Firestore.instance.collection('tasks');
+  bool loadingData = true;
 
   @override
   void initState() {
     super.initState();
     focusNode = FocusNode();
     controller = TextEditingController();
+    getTasks().then((resullist) {
+      setState(() {
+        tasks = resullist;
+        loadingData = false;
+      });
+    });
   }
 
   @override
@@ -50,74 +57,63 @@ class _TodoListState extends State<TodoList> {
         centerTitle: true,
       ),
       body: Center(
-        child: StreamBuilder<QuerySnapshot>(
-          stream: collection.snapshots(),
-          builder: (context, snapshot) {
-            if (snapshot.hasError)
-              return Text('Error in loading Data: ${snapshot.error}');
-            switch (snapshot.connectionState) {
-            // Display if still loading data
-              case ConnectionState.waiting: return Text('Loading Todo List...');
-              default:
-                return
-
-              return GestureDetector(
-                onVerticalDragStart: (details) {
-                  dragDetected = true;
-                },
-                onVerticalDragUpdate: (details) {
-                  if (dragDetected && details.delta.dy > 2.0) {
-                    downDragDetected = true;
-                    if (percent < 1.0) {
-                      percent += 0.10;
+          child: loadingData
+              ? Text('Loading List...')
+              : GestureDetector(
+                  onVerticalDragStart: (details) {
+                    dragDetected = true;
+                  },
+                  onVerticalDragUpdate: (details) {
+                    if (dragDetected && details.delta.dy > 2.0) {
+                      downDragDetected = true;
+                      if (percent < 1.0) {
+                        percent += 0.10;
+                      }
+                      setState(() {});
+                    }
+                  },
+                  onVerticalDragEnd: (details) {
+                    dragDetected = false;
+                    downDragDetected = false;
+                    percent = percent < 1.0 ? 0 : percent;
+                    if (percent >= 1.0) {
+                      focusNode.requestFocus();
+                      createItemShowing = true;
                     }
                     setState(() {});
-                  }
-                },
-                onVerticalDragEnd: (details) {
-                  dragDetected = false;
-                  downDragDetected = false;
-                  percent = percent < 1.0 ? 0 : percent;
-                  if (percent >= 1.0) {
-                    focusNode.requestFocus();
-                    createItemShowing = true;
-                  }
-                  setState(() {});
-                },
-                child: Column(
-                  children: [
-                    Container(
-                      height: 70 * percent,
-                      child: CreateItem(
-                          focusNode: focusNode,
-                          downDragDetected: downDragDetected,
-                          onDateSelected: _onDateSelected,
-                          selectedDateTime: selectedDateTime,
-                          onItemCreated: _onItemCreated,
-                          controller: controller),
-                    ),
-                    Expanded(
-                      child: IgnorePointer(
-                        ignoring: createItemShowing,
-                        child: ReorderableListView(
-                          onReorder: _onReorder,
-                          children: tasks.isNotEmpty
-                              ? getListItems(tasks, _onDeleteItem, _onDoneItem, _setListState)
-                              : getEmptyListView(createItemShowing),
+                  },
+                  child: Column(
+                    children: [
+                      Container(
+                        height: 70 * percent,
+                        child: CreateItem(
+                            focusNode: focusNode,
+                            downDragDetected: downDragDetected,
+                            onDateSelected: _onDateSelected,
+                            selectedDateTime: selectedDateTime,
+                            onItemCreated: _onItemCreated,
+                            controller: controller),
+                      ),
+                      Expanded(
+                        child: IgnorePointer(
+                          ignoring: createItemShowing,
+                          child: ReorderableListView(
+                            onReorder: _onReorder,
+                            children: tasks.isNotEmpty
+                                ? getListItems(tasks, _onDeleteItem,
+                                    _onDoneItem, _setListState)
+                                : getEmptyListView(createItemShowing),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ));
-          }
-        ),
-      ),
+                    ],
+                  ))
+          ),
     );
   }
 
-  _setListState(){
-    setState(() {
-    });
+  _setListState() {
+    setState(() {});
   }
 
   _onItemCreated(String task, DateTime reminderDateTime) {
@@ -125,10 +121,14 @@ class _TodoListState extends State<TodoList> {
       percent = 0;
       createItemShowing = false;
       if (task != null && task.isNotEmpty) {
-        TodoItem item = TodoItem(task, DateTime.now().millisecondsSinceEpoch.toString(),
+        TodoItem item = TodoItem(
+            task, DateTime.now().millisecondsSinceEpoch.toString(),
             reminderDate: selectedDateTime);
-        tasks.insert(0,item);
-        if(selectedDate != null){
+        tasks.insert(0, item);
+
+        onCreateItemDB(tasks);
+
+        if (selectedDate != null) {
           scheduleNotification(item.id, task, selectedDate);
           selectedDate = null;
         }
@@ -152,32 +152,36 @@ class _TodoListState extends State<TodoList> {
       TodoItem item = tasks[oldIndex];
       item.markActive();
       tasks.removeAt(oldIndex);
-      if(newIndex != 0){
-        if(!tasks[newIndex -1].isActive()) {
-          if(item.reminderDate!= null && item.reminderDate.isNotEmpty){
+      if (newIndex != 0) {
+        if (!tasks[newIndex - 1].isActive()) {
+          if (item.reminderDate != null && item.reminderDate.isNotEmpty) {
             cancelNotification(item.id);
           }
           item.markDone();
         }
-      }
-      else {
-        if (!tasks[0].isActive()){
-          if(item.reminderDate!= null && item.reminderDate.isNotEmpty){
+      } else {
+        if (!tasks[0].isActive()) {
+          if (item.reminderDate != null && item.reminderDate.isNotEmpty) {
             cancelNotification(item.id);
           }
           item.markDone();
         }
       }
       tasks.insert(newIndex, item);
+
+      onReorderItemDB(tasks, oldIndex, newIndex);
     });
   }
 
   _onDeleteItem(int index) {
     setState(() {
-      if(tasks[index].reminderDate!= null && tasks[index].reminderDate.isNotEmpty){
-        cancelNotification(tasks[index].id);
+      TodoItem item = tasks[index];
+      if (item.reminderDate != null && item.reminderDate.isNotEmpty) {
+        cancelNotification(item.id);
       }
       tasks.removeAt(index);
+
+      onDeleteItemDB(item.id, tasks, index);
     });
   }
 
@@ -185,14 +189,17 @@ class _TodoListState extends State<TodoList> {
     setState(() {
       TodoItem item = tasks[index];
       tasks.removeAt(index);
-      TodoItem newItem = TodoItem(item.getTask(), DateTime.now().millisecondsSinceEpoch.toString());
+      TodoItem newItem = TodoItem(
+          item.getTask(), DateTime.now().millisecondsSinceEpoch.toString());
       newItem.reminderDate = item.reminderDate;
       newItem.markDone();
       tasks.add(newItem);
 
-      if(item.reminderDate!= null && item.reminderDate.isNotEmpty){
+      if (item.reminderDate != null && item.reminderDate.isNotEmpty) {
         cancelNotification(item.id);
       }
+
+      onMarkDoneDB(item.id, tasks, index);
     });
   }
 }

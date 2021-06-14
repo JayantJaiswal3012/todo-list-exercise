@@ -1,5 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:todo_list/models/todo_item_model.dart';
 import 'package:todo_list/widgets/todo_item.dart';
 
 import '../constants.dart';
@@ -7,7 +9,7 @@ import '../constants.dart';
 List<Widget> getListItems(tasks, onDeleteItem, onDoneItem, setListState) {
   List<Widget> widgetList = new List<Widget>();
   for (var i = 0; i < tasks.length; i++) {
-    widgetList.add(TodoListItem(
+    widgetList.add(TodoListItemWidget(
         key: Key(tasks[i].id),
         itemCount: tasks.length,
         item: tasks[i],

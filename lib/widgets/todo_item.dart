@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:swipedetector/swipedetector.dart';
 import 'package:todo_list/models/todo_item_model.dart';
 
-class TodoListItem extends StatelessWidget {
-  TodoListItem(
+class TodoListItemWidget extends StatelessWidget {
+  TodoListItemWidget(
       {@required this.key,
       @required this.itemCount,
       @required this.item,
@@ -75,7 +75,7 @@ class TodoListItem extends StatelessWidget {
     if (item.isActive()) {
       return Listener(
         onPointerMove: (move) {
-          print("pointer ${move.localDelta}");
+          //print("pointer ${move.localDelta}");
           // Keeping min dx and max dy threshholds to avoid vertical swipe detection
           if (move.localDelta.dx > 5 &&
               move.localDelta.dy < 5 &&
@@ -101,7 +101,8 @@ class TodoListItem extends StatelessWidget {
                       decoration: item.swipeRightDetected
                           ? TextDecoration.lineThrough
                           : null,
-                      decorationThickness: 3)),
+                      decorationThickness: item.swipeRightDetected
+                          ? 3 : null)),
             ),
             subtitle: item.reminderDate != null && item.reminderDate.isNotEmpty
                 ? Padding(
