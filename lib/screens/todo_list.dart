@@ -27,6 +27,7 @@ class _TodoListState extends State<TodoList> {
   String selectedDateTime = "";
   TextEditingController controller;
   bool loadingData = true;
+  DateTime selectedDate;
 
   @override
   void initState() {
@@ -121,7 +122,7 @@ class _TodoListState extends State<TodoList> {
     createItemShowing = false;
     if (task != null && task.isNotEmpty) {
       TodoItem item = TodoItem(
-          task, DateTime.now().millisecondsSinceEpoch.toString(),
+          task, id: DateTime.now().millisecondsSinceEpoch.toString(),
           reminderDate: selectedDateTime);
       BlocProvider.of<TodosBloc>(context)
           .add(CreateTodo(item, reminderDateTime));

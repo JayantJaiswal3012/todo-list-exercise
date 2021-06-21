@@ -16,12 +16,13 @@ import 'blocs/todo_events.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initNotifications();
+  await NotificationManager().initNotifications();
   Bloc.observer = SimpleBlocObserver();
   runApp(BlocProvider(
       create: (context) {
         return TodosBloc(
           todosRepository: FirestoreTodosRepository(firestore),
+          notificationManager: NotificationManager(),
         )..add(LoadTodos());
       },
       child:

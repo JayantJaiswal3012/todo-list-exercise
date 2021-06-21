@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:todo_list/models/todo_item_entity.dart';
 
-class TodoItem extends Equatable{
+class TodoItem extends Equatable {
   String _task;
   String id;
   bool isActive = true;
@@ -9,7 +9,11 @@ class TodoItem extends Equatable{
   String reminderDate;
   int orderIndex;
 
-  TodoItem(this._task, this.id, {this.reminderDate, this.isActive = true, this.orderIndex = 0});
+  TodoItem(this._task,
+      {this.id = "",
+      this.reminderDate,
+      this.isActive = true,
+      this.orderIndex = 0});
 
   getTask() => this._task;
 
@@ -18,14 +22,6 @@ class TodoItem extends Equatable{
   markDone() => isActive = false;
 
   markActive() => isActive = true;
-
-  TodoItem copyWith({bool isActive, String id, String reminder, String task}) {
-    return TodoItem(
-      task ?? this._task,
-      id ?? this.id,
-      reminderDate: reminder ?? this.reminderDate,
-    );
-  }
 
   @override
   List<Object> get props => [isActive, id, reminderDate, _task];
@@ -40,12 +36,9 @@ class TodoItem extends Equatable{
   }
 
   static TodoItem fromEntity(TodoEntity entity) {
-    return TodoItem(
-      entity.task,
-      entity.id,
-      isActive: entity.isactive ?? false,
-      reminderDate: entity.reminder,
-      orderIndex: entity.orderindex
-    );
+    return TodoItem(entity.task, id : entity.id,
+        isActive: entity.isactive ?? false,
+        reminderDate: entity.reminder,
+        orderIndex: entity.orderindex);
   }
 }

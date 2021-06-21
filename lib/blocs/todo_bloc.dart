@@ -11,8 +11,9 @@ import 'package:todo_list/util/notification_helper.dart';
 
 class TodosBloc extends Bloc<TodosEvent, TodosState> {
   final TodosRepository todosRepository;
+  final NotificationManager notificationManager;
 
-  TodosBloc({@required this.todosRepository}) : super(TodosLoading());
+  TodosBloc({@required this.todosRepository, @required this.notificationManager,}) : super(TodosLoading());
 
   @override
   TodosState get initialState => TodosLoading();
@@ -49,7 +50,7 @@ class TodosBloc extends Bloc<TodosEvent, TodosState> {
         ..insert(0, event.todo);
       updateOrderIndexes(updatedTodos, 0, updatedTodos.length - 1);
       if (event.reminder != null) {
-        scheduleNotification(
+        notificationManager.scheduleNotification(
             event.todo.id, event.todo.getTask(), event.reminder);
       }
       yield TodosLoaded(updatedTodos);
@@ -63,7 +64,7 @@ class TodosBloc extends Bloc<TodosEvent, TodosState> {
       TodoItem deletedTodo = updatedTodos[event.deleteIndex];
       if (deletedTodo.reminderDate != null &&
           deletedTodo.reminderDate.isNotEmpty) {
-        cancelNotification(deletedTodo.id);
+        notificationManager.cancelNotification(deletedTodo.id);
       }
       updatedTodos.removeAt(event.deleteIndex);
       yield TodosLoaded(updatedTodos);
@@ -85,7 +86,7 @@ class TodosBloc extends Bloc<TodosEvent, TodosState> {
         if (!updatedTodos[event.newIndex - 1].isActive) {
           if (reorderedItem.reminderDate != null &&
               reorderedItem.reminderDate.isNotEmpty) {
-            cancelNotification(reorderedItem.id);
+            notificationManager.cancelNotification(reorderedItem.id);
           }
           reorderedItem.markDone();
         }
@@ -93,7 +94,7 @@ class TodosBloc extends Bloc<TodosEvent, TodosState> {
         if (!updatedTodos[0].isActive) {
           if (reorderedItem.reminderDate != null &&
               reorderedItem.reminderDate.isNotEmpty) {
-            cancelNotification(reorderedItem.id);
+            notificationManager.cancelNotification(reorderedItem.id);
           }
           reorderedItem.markDone();
         }
@@ -120,14 +121,14 @@ class TodosBloc extends Bloc<TodosEvent, TodosState> {
       TodoItem updatedItem = updatedTodos[event.markDoneIndex];
       updatedTodos.removeAt(event.markDoneIndex);
       TodoItem newItem = TodoItem(updatedItem.getTask(),
-          DateTime.now().millisecondsSinceEpoch.toString());
+          id : DateTime.now().millisecondsSinceEpoch.toString());
       newItem.reminderDate = updatedItem.reminderDate;
       newItem.markDone();
       updatedTodos.add(newItem);
 
       if (updatedItem.reminderDate != null &&
           updatedItem.reminderDate.isNotEmpty) {
-        cancelNotification(updatedItem.id);
+        notificationManager.cancelNotification(updatedItem.id);
       }
       yield TodosLoaded(updatedTodos);
       updateOrderIndexes(

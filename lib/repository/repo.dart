@@ -6,7 +6,7 @@ import 'package:todo_list/models/todo_item_entity.dart';
 abstract class TodosRepository {
   Future<void> addNewTodo(TodoEntity todo);
 
-  Future<void> deleteTodo(List<String> idList);
+  Future<void> deleteTodo(String id);
 
   Future<List<TodoEntity>> loadTodos();
 

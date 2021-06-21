@@ -20,10 +20,8 @@ class FirestoreTodosRepository implements TodosRepository {
   }
 
   @override
-  Future<void> deleteTodo(List<String> idList) async {
-    await Future.wait<void>(idList.map((id) {
-      return firestore.collection(path).document(id).delete();
-    }));
+  Future<void> deleteTodo(String id) {
+    return firestore.collection(path).document(id).delete();
   }
 
   @override
