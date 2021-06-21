@@ -9,6 +9,7 @@ import 'package:todo_list/widgets/create_item.dart';
 import 'package:intl/intl.dart';
 import '../constants.dart';
 import '../util/widget_helper.dart';
+import 'dart:math' as math;
 
 class TodoList extends StatefulWidget {
   TodoList({Key key, this.title}) : super(key: key);
@@ -31,9 +32,9 @@ class _TodoListState extends State<TodoList> {
 
   @override
   void initState() {
-    super.initState();
     focusNode = FocusNode();
     controller = TextEditingController();
+    super.initState();
   }
 
   @override
@@ -84,15 +85,23 @@ class _TodoListState extends State<TodoList> {
                   },
                   child: Column(
                     children: [
-                      Container(
-                        height: 70 * percent,
-                        child: CreateItem(
-                            focusNode: focusNode,
-                            downDragDetected: downDragDetected,
-                            onDateSelected: _onDateSelected,
-                            selectedDateTime: selectedDateTime,
-                            onItemCreated: _onItemCreated,
-                            controller: controller),
+                      Transform(
+                        transform: Matrix4.identity()
+                          ..setEntry(3, 2, 0.006) // perspective
+                          ..rotateX(percent < 1.0
+                              ? math.pi * -0.5 * (1.0 - percent)
+                              : math.pi * 0),
+                        alignment: FractionalOffset.bottomCenter,
+                        child: Container(
+                          height: 70 * percent,
+                          child: CreateItem(
+                              focusNode: focusNode,
+                              downDragDetected: downDragDetected,
+                              onDateSelected: _onDateSelected,
+                              selectedDateTime: selectedDateTime,
+                              onItemCreated: _onItemCreated,
+                              controller: controller),
+                        ),
                       ),
                       Expanded(
                         child: IgnorePointer(
@@ -121,8 +130,8 @@ class _TodoListState extends State<TodoList> {
     percent = 0;
     createItemShowing = false;
     if (task != null && task.isNotEmpty) {
-      TodoItem item = TodoItem(
-          task, id: DateTime.now().millisecondsSinceEpoch.toString(),
+      TodoItem item = TodoItem(task,
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
           reminderDate: selectedDateTime);
       BlocProvider.of<TodosBloc>(context)
           .add(CreateTodo(item, reminderDateTime));
