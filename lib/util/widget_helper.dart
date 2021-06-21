@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:todo_list/models/todo_item_model.dart';
 import 'package:todo_list/widgets/todo_item.dart';
 
 import '../constants.dart';

@@ -29,7 +29,7 @@ class TodoListItemWidget extends StatelessWidget {
       onDismissed: (direction) {
         if (direction == DismissDirection.startToEnd) {
           item.swipeRightDetected = false;
-          if (item.isActive()) {
+          if (item.isActive) {
             onDoneItem(index);
           } else {
             onDeleteItem(index);
@@ -60,8 +60,8 @@ class TodoListItemWidget extends StatelessWidget {
       background: Container(
         color: Colors.black,
         child: Icon(
-          item.isActive() ? Icons.check : Icons.close,
-          color: item.isActive() ? Colors.white : Colors.red,
+          item.isActive ? Icons.check : Icons.close,
+          color: item.isActive ? Colors.white : Colors.red,
           size: 40,
         ),
         alignment: Alignment.centerLeft,
@@ -72,14 +72,14 @@ class TodoListItemWidget extends StatelessWidget {
   }
 
   Widget _createItemForState(TodoItem item, int index) {
-    if (item.isActive()) {
+    if (item.isActive) {
       return Listener(
         onPointerMove: (move) {
           //print("pointer ${move.localDelta}");
           // Keeping min dx and max dy threshholds to avoid vertical swipe detection
           if (move.localDelta.dx > 5 &&
               move.localDelta.dy < 5 &&
-              item.isActive()) {
+              item.isActive) {
             item.swipeRightDetected = true;
             setListState();
           }

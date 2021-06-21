@@ -19,16 +19,6 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
     );
   }
 
-  Widget _buildFullscrenImage() {
-    return Image.asset(
-      'assets/sorting.png',
-      fit: BoxFit.cover,
-      height: double.infinity,
-      width: double.infinity,
-      alignment: Alignment.center,
-    );
-  }
-
   Widget _buildImage(String assetName, [double width = 350]) {
     return Image.asset(
       'assets/$assetName',

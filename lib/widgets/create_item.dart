@@ -36,6 +36,7 @@ class CreateItem extends StatelessWidget {
             onSubmitted: (todoText) {
               print("On Create $todoText");
               onItemCreated(todoText, selectedDate);
+              selectedDate = null;
               controller.clear();
               ;
             }),

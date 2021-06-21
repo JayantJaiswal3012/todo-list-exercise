@@ -1,8 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:todo_list/blocs/todo_bloc.dart';
+import 'package:todo_list/blocs/todo_events.dart';
+import 'package:todo_list/blocs/todo_states.dart';
 import 'package:todo_list/models/todo_item_model.dart';
-import 'package:todo_list/util/data_helper.dart';
-import 'package:todo_list/util/notification_helper.dart';
 import 'package:todo_list/widgets/create_item.dart';
 import 'package:intl/intl.dart';
 import '../constants.dart';
@@ -17,7 +19,6 @@ class TodoList extends StatefulWidget {
 }
 
 class _TodoListState extends State<TodoList> {
-  List<TodoItem> tasks = [];
   bool dragDetected = false;
   bool downDragDetected = false;
   bool createItemShowing = false;
@@ -32,12 +33,6 @@ class _TodoListState extends State<TodoList> {
     super.initState();
     focusNode = FocusNode();
     controller = TextEditingController();
-    getTasks().then((resullist) {
-      setState(() {
-        tasks = resullist;
-        loadingData = false;
-      });
-    });
   }
 
   @override
@@ -49,16 +44,21 @@ class _TodoListState extends State<TodoList> {
 
   @override
   Widget build(BuildContext context) {
+    //final todosBloc = BlocProvider.of<TodosBloc>(context);
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
         title: Text(widget.title),
         centerTitle: true,
       ),
-      body: Center(
-          child: loadingData
-              ? Text('Loading List...')
-              : GestureDetector(
+      body: BlocBuilder<TodosBloc, TodosState>(builder: (context, state) {
+        if (state is TodosLoading) {
+          return Center(child: Text('Loading List...'));
+        } else if (state is TodosNotLoaded) {
+          return Center(child: Text('Error in Fetching List'));
+        } else if (state is TodosLoaded) {
+          return Center(
+              child: GestureDetector(
                   onVerticalDragStart: (details) {
                     dragDetected = true;
                   },
@@ -98,16 +98,17 @@ class _TodoListState extends State<TodoList> {
                           ignoring: createItemShowing,
                           child: ReorderableListView(
                             onReorder: _onReorder,
-                            children: tasks.isNotEmpty
-                                ? getListItems(tasks, _onDeleteItem,
+                            children: state.todos.isNotEmpty
+                                ? getListItems(state.todos, _onDeleteItem,
                                     _onDoneItem, _setListState)
                                 : getEmptyListView(createItemShowing),
                           ),
                         ),
                       ),
                     ],
-                  ))
-          ),
+                  )));
+        }
+      }),
     );
   }
 
@@ -116,89 +117,37 @@ class _TodoListState extends State<TodoList> {
   }
 
   _onItemCreated(String task, DateTime reminderDateTime) {
-    setState(() {
-      percent = 0;
-      createItemShowing = false;
-      if (task != null && task.isNotEmpty) {
-        TodoItem item = TodoItem(
-            task, DateTime.now().millisecondsSinceEpoch.toString(),
-            reminderDate: selectedDateTime);
-        tasks.insert(0, item);
-
-        onCreateItemDB(tasks);
-
-        if (selectedDate != null) {
-          scheduleNotification(item.id, task, selectedDate);
-          selectedDate = null;
-        }
-      }
-      selectedDateTime = "";
-    });
-  }
-
-  _onDateSelected(val) {
-    setState(() {
-      DateFormat df = DateFormat(Const.DATE_FORMAT);
-      selectedDateTime = df.format(val);
-    });
+    percent = 0;
+    createItemShowing = false;
+    if (task != null && task.isNotEmpty) {
+      TodoItem item = TodoItem(
+          task, DateTime.now().millisecondsSinceEpoch.toString(),
+          reminderDate: selectedDateTime);
+      BlocProvider.of<TodosBloc>(context)
+          .add(CreateTodo(item, reminderDateTime));
+    }
+    selectedDateTime = "";
   }
 
   _onReorder(int oldIndex, int newIndex) {
     if (newIndex > oldIndex) {
       newIndex -= 1;
     }
-    setState(() {
-      TodoItem item = tasks[oldIndex];
-      item.markActive();
-      tasks.removeAt(oldIndex);
-      if (newIndex != 0) {
-        if (!tasks[newIndex - 1].isActive()) {
-          if (item.reminderDate != null && item.reminderDate.isNotEmpty) {
-            cancelNotification(item.id);
-          }
-          item.markDone();
-        }
-      } else {
-        if (!tasks[0].isActive()) {
-          if (item.reminderDate != null && item.reminderDate.isNotEmpty) {
-            cancelNotification(item.id);
-          }
-          item.markDone();
-        }
-      }
-      tasks.insert(newIndex, item);
-
-      onReorderItemDB(tasks, oldIndex, newIndex);
-    });
+    BlocProvider.of<TodosBloc>(context).add(ReorderTodos(oldIndex, newIndex));
   }
 
   _onDeleteItem(int index) {
-    setState(() {
-      TodoItem item = tasks[index];
-      if (item.reminderDate != null && item.reminderDate.isNotEmpty) {
-        cancelNotification(item.id);
-      }
-      tasks.removeAt(index);
-
-      onDeleteItemDB(item.id, tasks, index);
-    });
+    BlocProvider.of<TodosBloc>(context).add(DeleteTodo(index));
   }
 
   _onDoneItem(int index) {
+    BlocProvider.of<TodosBloc>(context).add(MarkDone(index));
+  }
+
+  _onDateSelected(val) {
     setState(() {
-      TodoItem item = tasks[index];
-      tasks.removeAt(index);
-      TodoItem newItem = TodoItem(
-          item.getTask(), DateTime.now().millisecondsSinceEpoch.toString());
-      newItem.reminderDate = item.reminderDate;
-      newItem.markDone();
-      tasks.add(newItem);
-
-      if (item.reminderDate != null && item.reminderDate.isNotEmpty) {
-        cancelNotification(item.id);
-      }
-
-      onMarkDoneDB(item.id, tasks, index);
+      DateFormat df = DateFormat(Const.DATE_FORMAT);
+      selectedDateTime = df.format(val);
     });
   }
 }
